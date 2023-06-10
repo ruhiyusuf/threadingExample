@@ -15,7 +15,7 @@ public:
         while (1)
         {
             printf("%d\n", val);
-            std::this_thread::sleep_for(std::chrono::seconds(2));
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 
@@ -28,23 +28,38 @@ public:
     {
         val++;
     }
+
+    void dec()
+    {
+        val--;
+    }
+
+    int getVal() {
+        return val;
+    }
 };
 
 class foo2
 {
     public:
     
-    foo * otherClass;
-    foo2 (foo *other){
-        otherClass = other;
+    foo2 (){
     }
-    void increment(){
-        int i = 0;
-        while (i < 200)
-        {
-            otherClass->inc();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+    void increment(foo *target, int count, int sleep){
+        while(count-- > 0)
+        {
+            target->inc();
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+        }
+
+    }
+
+    void decrement(foo *target, int sleep) {
+        while(target->getVal() > 0) 
+        {
+            target->dec();
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         }
     }
 };
@@ -52,22 +67,31 @@ class foo2
 int main()
 {
     foo myClass;
+    foo2 incram1;
+    foo2 incram2;
+
+    // int count = 20;
     std::thread t(&foo::run, &myClass);
+    std::thread t2(&foo2::increment, &incram1, &myClass, 20, 100);
+    std::thread t3(&foo2::increment, &incram2, &myClass, 10, 500);
+
+
     t.detach(); 
+    // t2.detach(); 
+    // t3.detach();
 
-    std::thread t1(&foo2::increment, t);
-    t1.detach();
+    t2.join();
+    t3.join();
+    printf("exited out of t2 and t3");
+    std::thread t4(&foo2::decrement, &incram1, &myClass, 500);
 
-    // while(1)
-    // {
-    //     myClass.inc();
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    // }
-    t.join();
-    t1.join();
+    t4.detach();
+    while(1);
     return 1;
 }
 
 //first thread running on a forever loop that prints very 2 seconds
 // second thread increments (in the constructur tell it how much to increment)
 // code to detach, join and wait for the increment to happen, and then wait for value at the end, and then print
+
+// decrement to zero only after done incrementing
